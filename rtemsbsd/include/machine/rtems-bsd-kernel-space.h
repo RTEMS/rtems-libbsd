@@ -402,6 +402,8 @@ void dirent_terminate(struct dirent *dp);
 #define __enum_uint8(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
 #endif
 
+struct iommu_domain;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

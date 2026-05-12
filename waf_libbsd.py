@@ -225,7 +225,11 @@ class Builder(builder.ModuleManager):
         #
         defines = []
         if 'defines' in config:
-            defines += [d for d in config['defines']]
+            if 'defaults' in config['defines']:
+                defines += [d for d in config['defines']['defaults']]
+            cpu = bld.get_env()['RTEMS_ARCH']
+            if cpu in config['defines']:
+                defines += [d for d in config['defines'][cpu]]
         if len(bld.env.FREEBSD_OPTIONS) > 0:
             for o in bld.env.FREEBSD_OPTIONS.split(','):
                 defines += ['%s=1' % (o.strip().upper())]

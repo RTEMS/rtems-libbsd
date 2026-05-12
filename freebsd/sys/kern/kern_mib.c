@@ -83,11 +83,11 @@ SYSCTL_NODE(_debug, OID_AUTO,  sizeof,  CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
 #endif /* __rtems__ */
 SYSCTL_ROOT_NODE(CTL_HW, hw, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "hardware");
-#ifndef __rtems__
 SYSCTL_ROOT_NODE(CTL_MACHDEP, machdep, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "machine dependent");
 SYSCTL_NODE(_machdep, OID_AUTO, mitigations, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "Machine dependent platform mitigations.");
+#ifndef __rtems__
 SYSCTL_ROOT_NODE(CTL_USER, user, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "user-level");
 SYSCTL_ROOT_NODE(CTL_P1003_1B, p1003_1b, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,

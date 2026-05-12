@@ -53,6 +53,7 @@
 #include <rtems/bsd/local/opt_platform.h>
 
 #ifdef FDT
+#include <dev/ofw/ofw_bus_subr.h>
 #include <dev/ofw/ofw_bus.h>
 #endif
 
@@ -251,6 +252,13 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 		}
 	}
 
+	if (flags & RF_ACTIVE) {
+		if (bus_activate_resource(child, type, *rid, res) != 0) {
+			rman_release_resource(res);
+			return (NULL);
+		}
+	}
+
 	return (res);
 }
 
@@ -286,6 +294,8 @@ nexus_activate_resource(device_t bus, device_t child, int type, int rid,
 		   rman_get_start(res) + RTEMS_BSP_PCI_MEM_REGION_BASE);
 #endif
 		break;
+	default:
+		return bus_generic_rman_activate_resource(bus, child, type, rid, res);
 	}
 	return (rman_activate_resource(res));
 }
@@ -298,6 +308,28 @@ nexus_deactivate_resource(device_t bus, device_t child, int type, int rid,
 	return (rman_deactivate_resource(res));
 }
 #endif
+
+static int nexus_map_resource(device_t dev, device_t child, int type,
+    struct resource *r, struct resource_map_request *argsp,
+    struct resource_map *map)
+{
+	if (argsp->size > rman_get_size(r)) {
+		return EINVAL;
+	}
+
+	map->r_size = argsp->length;
+	map->r_vaddr = (void*)(rman_get_start(r) + argsp->offset);
+	map->r_bustag = rman_get_bustag(r);
+	map->r_bushandle = rman_get_bushandle(r);
+
+	return 0;
+}
+
+static int nexus_unmap_resource(device_t dev, device_t child, int type,
+    struct resource *r, struct resource_map *map)
+{
+	return 0;
+}
 
 struct nexus_intr {
 	driver_filter_t *filt;
@@ -325,6 +357,15 @@ nexus_setup_intr(device_t dev, device_t child, struct resource *res, int flags,
 {
 	int err;
 #ifndef DISABLE_INTERRUPT_EXTENSION
+#ifdef INTRNG
+
+	err = rman_activate_resource(res);
+	if (err != 0) {
+		return (err);
+	}
+
+	return intr_setup_irq(child, res, filt, intr, arg, flags, cookiep);
+#else
 	struct nexus_intr *ni;
 
 	ni = malloc(sizeof(*ni), M_TEMP, M_WAITOK);
@@ -360,10 +401,10 @@ nexus_setup_intr(device_t dev, device_t child, struct resource *res, int flags,
 	} else {
 		err = ENOMEM;
 	}
+#endif /* INTRNG */
 #else
 	err = EINVAL;
 #endif
-
 	return (err);
 }
 
@@ -373,6 +414,9 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 {
 	int err;
 #ifndef DISABLE_INTERRUPT_EXTENSION
+#ifdef INTRNG
+	return intr_teardown_irq(child, res, cookie);
+#else /* INTRNG */
 	struct nexus_intr *ni;
 	rtems_status_code sc;
 	rtems_interrupt_handler rh;
@@ -396,6 +440,7 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 		free(cookie, M_TEMP);
 		err = 0;
 	}
+#endif /* INTRNG */
 #else
 	err = EINVAL;
 #endif
@@ -409,7 +454,23 @@ nexus_ofw_map_intr(device_t dev, device_t child, phandle_t iparent, int icells,
     pcell_t *intr)
 {
 #ifdef RTEMS_BSP_FDT
+#ifdef INTRNG
+	u_int irq;
+	struct intr_map_data_fdt *fdt_data;
+	size_t len;
+
+	len = sizeof(*fdt_data) + icells * sizeof(pcell_t);
+	fdt_data = (struct intr_map_data_fdt *)intr_alloc_map_data(
+	    INTR_MAP_DATA_FDT, len, M_WAITOK | M_ZERO);
+	fdt_data->iparent = iparent;
+	fdt_data->ncells = icells;
+	fdt_data->nameunit = device_get_nameunit(child);
+	memcpy(fdt_data->cells, intr, icells * sizeof(pcell_t));
+	irq = intr_map_irq(NULL, iparent, (struct intr_map_data *)fdt_data);
+	return (irq);
+#else /* INTRNG */
 	return ((int)bsp_fdt_map_intr(intr, (size_t)icells));
+#endif /* INTRNG */
 #else /* RTEMS_BSP_FDT */
 	return -1;
 #endif
@@ -434,6 +495,8 @@ static device_method_t nexus_methods[] = {
 	DEVMETHOD(bus_activate_resource, nexus_activate_resource),
 	DEVMETHOD(bus_deactivate_resource, nexus_deactivate_resource),
 #endif
+	DEVMETHOD(bus_map_resource, nexus_map_resource),
+	DEVMETHOD(bus_unmap_resource, nexus_unmap_resource),
 	DEVMETHOD(bus_setup_intr, nexus_setup_intr),
 	DEVMETHOD(bus_teardown_intr, nexus_teardown_intr),
 

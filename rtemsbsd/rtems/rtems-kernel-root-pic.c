@@ -38,8 +38,6 @@
 
 #include <rtems/rtems/intr.h>
 
-#include <bsp/irq.h>
-
 #include <machine/intr.h>
 #include <machine/bus.h>
 
@@ -87,7 +85,7 @@ static int rtems_pic_register_irq(struct rtems_pic_softc* sc) {
     int error;
     int irq;
 
-    sc->isrcs = malloc(sizeof(*sc->isrcs) * BSP_INTERRUPT_VECTOR_COUNT,
+    sc->isrcs = malloc(sizeof(*sc->isrcs) * NIRQ,
         M_DEVBUF, M_WAITOK | M_ZERO);
 
     name = device_get_nameunit(sc->dev);

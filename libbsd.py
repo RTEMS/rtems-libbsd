@@ -42,7 +42,10 @@ _defaults = {
     #
     # Global defines, added to the build of all files
     #
-    'defines': ['FDT=1'],
+    'defines': {
+        'defaults': ['FDT=1'],
+        'aarch64': ['INTRNG=1'],
+    },
 
     #
     # Compile flags
@@ -185,7 +188,6 @@ class rtems(builder.Module):
                 'local/ofw_if.c',
                 'local/pcib_if.c',
                 'local/pci_if.c',
-                'local/pic_if.c',
                 'local/syscon_if.c',
                 'local/xdma_if.c',
                 'local/usb_if.c',
@@ -345,6 +347,21 @@ class rtems(builder.Module):
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['yacc']('_nsyy', 'nsparser.h')))
+        self.addCPUDependentRTEMSSourceFiles(
+            [ 'aarch64' ],
+            [
+                'local/pic_if.c',
+                'rtems/rtems-kernel-root-pic.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addCPUDependentRTEMSSourceFiles(
+            [ 'powerpc' ],
+            [
+                'powerpc/pic_if.c',
+            ],
+            mm.generator['source']()
+        )
 
 
 #
@@ -620,6 +637,13 @@ class base(builder.Module):
                 'sys/vm/uma_core.c',
                 'sys/vm/uma_dbg.c',
                 'sys/vm/vm_meter.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addCPUDependentFreeBSDSourceFiles(
+            [ 'aarch64' ],
+            [
+                'sys/kern/subr_intr.c',
             ],
             mm.generator['source']()
         )

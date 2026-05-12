@@ -150,6 +150,7 @@ do {					\
 		PMC_SOFT_CALL( , , intr, event);		\
 } while (0)
 #endif
+#endif /* __rtems__ */
 
 /* Map an interrupt type to an ithread priority. */
 u_char
@@ -189,7 +190,6 @@ intr_priority(enum intr_type flags)
 	return pri;
 }
 
-#endif /* __rtems__ */
 /*
  * Update an ithread based on the associated intr_event.
  */
@@ -551,6 +551,7 @@ intr_getaffinity(int irq, int mode, void *m)
 	return (0);
 }
 
+#endif /* __rtems__ */
 int
 intr_event_destroy(struct intr_event *ie)
 {
@@ -567,15 +568,16 @@ intr_event_destroy(struct intr_event *ie)
 	}
 	TAILQ_REMOVE(&event_list, ie, ie_list);
 	mtx_unlock(&event_lock);
+#ifndef __rtems__
 	if (ie->ie_thread != NULL)
 		ithread_destroy(ie->ie_thread);
+#endif /* __rtems__ */
 	mtx_unlock(&ie->ie_lock);
 	mtx_destroy(&ie->ie_lock);
 	free(ie, M_ITHREAD);
 	return (0);
 }
 
-#endif /* __rtems__ */
 static struct intr_thread *
 ithread_create(const char *name)
 {
@@ -763,6 +765,7 @@ intr_event_describe_handler(struct intr_event *ie, void *cookie,
 	mtx_unlock(&ie->ie_lock);
 	return (0);
 }
+#endif /* __rtems__ */
 
 /*
  * Return the ie_source field from the intr_event an intr_handler is
@@ -823,6 +826,7 @@ intr_event_barrier(struct intr_event *ie)
 	atomic_thread_fence_acq();
 }
 
+#ifndef __rtems__
 static void
 intr_handler_barrier(struct intr_handler *handler)
 {
@@ -883,6 +887,7 @@ _intr_drain(int irq)
 	thread_unlock(td);
 	return;
 }
+#endif /* __rtems__ */
 
 int
 intr_event_remove_handler(void *cookie)
@@ -940,6 +945,7 @@ intr_event_remove_handler(void *cookie)
 	return (0);
 }
 
+#ifndef __rtems__
 int
 intr_event_suspend_handler(void *cookie)
 {
@@ -1384,7 +1390,6 @@ ithread_loop(void *arg)
 			thread_unlock(td);
 	}
 }
-#ifndef __rtems__
 
 /*
  * Main interrupt handling body.
@@ -1428,8 +1433,10 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	thread = false;
 	ret = 0;
 	critical_enter();
+#ifndef __rtems__
 	oldframe = td->td_intr_frame;
 	td->td_intr_frame = frame;
+#endif /* __rtems__ */
 
 	phase = ie->ie_phase;
 	atomic_add_int(&ie->ie_active[phase], 1);
@@ -1495,7 +1502,9 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	}
 	atomic_add_rel_int(&ie->ie_active[phase], -1);
 
+#ifndef __rtems__
 	td->td_intr_frame = oldframe;
+#endif /* __rtems__ */
 
 	if (thread) {
 		if (ie->ie_pre_ithread != NULL)
@@ -1522,6 +1531,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	return (0);
 }
 
+#ifndef __rtems__
 #ifdef DDB
 /*
  * Dump details about an interrupt handler

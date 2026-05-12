@@ -4,7 +4,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   freebsd-org/sys/powerpc/powerpc/pic_if.m
+ *   freebsd-org/sys/kern/pic_if.m
  * with
  *   makeobjops.awk
  *
@@ -17,52 +17,120 @@
 #include <sys/kobj.h>
 #include <sys/bus.h>
 #include <sys/cpuset.h>
-#include <machine/frame.h>
+#include <sys/resource.h>
+#include <sys/intr.h>
 #include <rtems/bsd/local/pic_if.h>
 
 
-static pic_translate_code_t pic_translate_code_default;
-
-static void pic_translate_code_default(device_t dev, u_int irq,
-    int code, enum intr_trigger *trig, enum intr_polarity *pol)
+static int
+dflt_pic_bind_intr(device_t dev, struct intr_irqsrc *isrc)
 {
-	*trig = INTR_TRIGGER_CONFORM;
-	*pol = INTR_POLARITY_CONFORM;
+
+	return (EOPNOTSUPP);
 }
 
-struct kobjop_desc pic_bind_desc = {
-	0, { &pic_bind_desc, (kobjop_t)kobj_error_method }
+static int
+null_pic_activate_intr(device_t dev, struct intr_irqsrc *isrc,
+    struct resource *res, struct intr_map_data *data)
+{
+
+	return (0);
+}
+
+static int
+null_pic_deactivate_intr(device_t dev, struct intr_irqsrc *isrc,
+    struct resource *res, struct intr_map_data *data)
+{
+
+	return (0);
+}
+
+static int
+null_pic_setup_intr(device_t dev, struct intr_irqsrc *isrc,
+    struct resource *res, struct intr_map_data *data)
+{
+
+	return (0);
+}
+
+static int
+null_pic_teardown_intr(device_t dev, struct intr_irqsrc *isrc,
+    struct resource *res, struct intr_map_data *data)
+{
+
+	return (0);
+}
+
+static void
+null_pic_init_secondary(device_t dev)
+{
+}
+
+static void
+null_pic_ipi_send(device_t dev, cpuset_t cpus, u_int ipi)
+{
+}
+
+static int
+dflt_pic_ipi_setup(device_t dev, u_int ipi, struct intr_irqsrc *isrc)
+{
+
+	return (EOPNOTSUPP);
+}
+
+struct kobjop_desc pic_activate_intr_desc = {
+	0, { &pic_activate_intr_desc, (kobjop_t)null_pic_activate_intr }
 };
 
-struct kobjop_desc pic_translate_code_desc = {
-	0, { &pic_translate_code_desc, (kobjop_t)pic_translate_code_default }
+struct kobjop_desc pic_bind_intr_desc = {
+	0, { &pic_bind_intr_desc, (kobjop_t)dflt_pic_bind_intr }
 };
 
-struct kobjop_desc pic_config_desc = {
-	0, { &pic_config_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_disable_intr_desc = {
+	0, { &pic_disable_intr_desc, (kobjop_t)kobj_error_method }
 };
 
-struct kobjop_desc pic_dispatch_desc = {
-	0, { &pic_dispatch_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_enable_intr_desc = {
+	0, { &pic_enable_intr_desc, (kobjop_t)kobj_error_method }
 };
 
-struct kobjop_desc pic_enable_desc = {
-	0, { &pic_enable_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_map_intr_desc = {
+	0, { &pic_map_intr_desc, (kobjop_t)kobj_error_method }
 };
 
-struct kobjop_desc pic_eoi_desc = {
-	0, { &pic_eoi_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_deactivate_intr_desc = {
+	0, { &pic_deactivate_intr_desc, (kobjop_t)null_pic_deactivate_intr }
 };
 
-struct kobjop_desc pic_ipi_desc = {
-	0, { &pic_ipi_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_setup_intr_desc = {
+	0, { &pic_setup_intr_desc, (kobjop_t)null_pic_setup_intr }
 };
 
-struct kobjop_desc pic_mask_desc = {
-	0, { &pic_mask_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_teardown_intr_desc = {
+	0, { &pic_teardown_intr_desc, (kobjop_t)null_pic_teardown_intr }
 };
 
-struct kobjop_desc pic_unmask_desc = {
-	0, { &pic_unmask_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc pic_post_filter_desc = {
+	0, { &pic_post_filter_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc pic_post_ithread_desc = {
+	0, { &pic_post_ithread_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc pic_pre_ithread_desc = {
+	0, { &pic_pre_ithread_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc pic_init_secondary_desc = {
+	0, { &pic_init_secondary_desc, (kobjop_t)null_pic_init_secondary }
+};
+
+struct kobjop_desc pic_ipi_send_desc = {
+	0, { &pic_ipi_send_desc, (kobjop_t)null_pic_ipi_send }
+};
+
+struct kobjop_desc pic_ipi_setup_desc = {
+	0, { &pic_ipi_setup_desc, (kobjop_t)dflt_pic_ipi_setup }
 };
 

@@ -2396,7 +2396,7 @@ rtems_status_code rtems_bsd_force_select_timeout(rtems_id task_id)
 	thread = _Thread_Get(task_id, &lock_context);
 	if (thread == NULL) {
 #if defined(RTEMS_MULTIPROCESSING)
-		if (_Thread_MP_Is_remote(id)) {
+		if (_Thread_MP_Is_remote(task_id)) {
 			return (RTEMS_ILLEGAL_ON_REMOTE_OBJECT);
 		}
 #endif

@@ -337,8 +337,8 @@ list_devs(const char *name, int verbose, int bars, int bridge, int caps,
 				    p->pc_revid, p->pc_hdr,
 				    p->pc_vendor, p->pc_device,
 				    p->pc_subvendor, p->pc_subdevice);
-			if (verbose)
 #ifndef __rtems__
+			if (verbose)
 				list_verbose(p);
 #endif /* __rtems__ */
 			if (bars)

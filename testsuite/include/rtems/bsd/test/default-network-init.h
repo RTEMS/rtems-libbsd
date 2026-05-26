@@ -402,6 +402,8 @@ Init(rtems_task_argument arg)
 #define CONFIGURE_SHELL_COMMAND_RM
 #define CONFIGURE_SHELL_COMMAND_MALLOC_INFO
 #define CONFIGURE_SHELL_COMMAND_SHUTDOWN
+#define CONFIGURE_SHELL_COMMAND_SETENV
+#define CONFIGURE_SHELL_COMMAND_GETENV
 #endif
 
 #include <rtems/shellconfig.h>

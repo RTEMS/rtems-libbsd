@@ -284,6 +284,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-ifconfig.c',
                 'rtems/rtems-bsd-iface.c',
                 'rtems/rtems-bsd-ifconfig-lo0.c',
+                'rtems/rtems-bsd-rc-conf-env.c',
                 'rtems/rtems-bsd-rc-conf-net.c',
                 'rtems/rtems-bsd-rc-conf-pf.c',
                 'rtems/rtems-bsd-rc-conf.c',
@@ -5936,6 +5937,8 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('log01', ['test_main']))
         self.addTest(mm.generator['test']('rcconf01', ['test_main']))
         self.addTest(mm.generator['test']('rcconf02', ['test_main'],
+                                          extraLibs = ['ftpd']))
+        self.addTest(mm.generator['test']('rcconf03', ['test_main'],
                                           extraLibs = ['ftpd']))
         self.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
         self.addTest(mm.generator['test']('pf01', ['test_main'],

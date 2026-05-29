@@ -32,6 +32,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include <machine/rtems-bsd-kernel-space.h>
+
+#define _GNU_SOURCE
+#include <pthread.h>
+#undef _GNU_SOURCE
+
+#include <machine/rtems-bsd-thread.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -84,9 +91,11 @@ rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg
   char nm[4];
   rtems_id tid;
   rtems_status_code sc;
+  int ret;
 
   strncpy (nm, name, 4);
-  sc = rtems_task_create (rtems_build_name(nm[0], nm[1], nm[2], nm[3]),
+  sc = rtems_task_create (
+    BSD_TASK_NAME,
     rtems_bsd_get_task_priority(name),
     stacksize,
     RTEMS_PREEMPT|RTEMS_NO_TIMESLICE|RTEMS_NO_ASR|RTEMS_INTERRUPT_LEVEL(0),
@@ -95,6 +104,9 @@ rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg
   );
   if (sc != RTEMS_SUCCESSFUL)
     rtems_panic ("Can't create network daemon `%s': `%s'\n", name, rtems_status_text (sc));
+
+  /* Record a more detailed thread name */
+  pthread_setname_np(tid, name);
 
   /*
    * Set up task arguments

@@ -4,5 +4,5 @@
 
 #ifndef	NIRQ
 #include <bsp/irq.h>
-#define	NIRQ			BSP_INTERRUPT_VECTOR_COUNT
+#define	NIRQ			(BSP_INTERRUPT_VECTOR_COUNT * 2)
 #endif

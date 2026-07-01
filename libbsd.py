@@ -55,7 +55,7 @@ _defaults = {
                          '-Wno-format',
                          '-Wno-pointer-sign'],
     'common-no-warnings': ['-w'],
-    'cflags': [],
+    'cflags': ['-Wno-implicit-function-declaration'],
     'cxxflags': [],
 
     #

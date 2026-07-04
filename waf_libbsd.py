@@ -372,7 +372,7 @@ class Builder(builder.ModuleManager):
                         if value != net_cfg[rtag]['value']:
                             updated = True
                             net_cfg[rtag]['value'] = value
-        transpose = [(':', '\:'), ('/', '\/')]
+        transpose = [(':', '\\:'), ('/', '\\/')]
         sed = 'sed '
         for tag in net_cfg:
             tv = ''

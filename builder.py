@@ -546,7 +546,7 @@ class BuildSystemComposer(object):
         define_keys = ''
         for f in files:
             f = f.upper()
-            for c in '\/-.':
+            for c in '\\/-.':
                 f = f.replace(c, '_')
             define_keys += ' ' + f
         return define_keys.strip()

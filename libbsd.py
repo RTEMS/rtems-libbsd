@@ -5862,6 +5862,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('selectpollkqueue01', ['test_main']))
         self.addTest(mm.generator['test']('dup01', ['test_main']))
         self.addTest(mm.generator['test']('kqueueclose01', ['test_main']))
+        self.addTest(mm.generator['test']('pipe01', ['test_main']))
         self.addTest(mm.generator['test']('rwlock01', ['test_main']))
         self.addTest(mm.generator['test']('sleep01', ['test_main']))
         self.addTest(mm.generator['test']('syscalls01', ['test_main']))

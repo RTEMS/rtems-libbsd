@@ -1311,7 +1311,21 @@ closefp_impl(struct filedesc *fdp, int fd, struct file *fp, struct thread *td,
 	 * added, and deleteing a knote for the new fd.
 	 */
 	if (__predict_false(!TAILQ_EMPTY(&fdp->fd_kqlist)))
+#ifndef __rtems__
 		knote_fdclose(td, fd);
+#else /* __rtems__ */
+		/*
+		 * kqueue_register() indexes a knote by the identifier the
+		 * caller passed, which for a libbsd descriptor is the libio
+		 * file descriptor, not the BSD one this routine is called
+		 * with.  The two are separate numbering spaces, so passing
+		 * the BSD descriptor here both misses this file's knotes --
+		 * leaving the reference they hold on fp behind, so the socket
+		 * is never released -- and drops the knotes of whichever
+		 * unrelated libio descriptor happens to have the same number.
+		 */
+		knote_fdclose(td, rtems_bsd_bsd_fd_to_libio_fd(fdp, fd, fp));
+#endif /* __rtems__ */
 
 	/*
 	 * We need to notify mqueue if the object is of type mqueue.

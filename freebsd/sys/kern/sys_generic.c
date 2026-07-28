@@ -1429,6 +1429,39 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 	return (n);
 }
 
+#ifdef __rtems__
+/*
+ * Acquire what rtems_bsd_libio_fo_poll() needs for one descriptor: a hold on
+ * the libio descriptor, and a reference on the file behind it when the
+ * descriptor is libbsd-backed.  On success the hold belongs to the fo_poll()
+ * call that follows, which releases it.  On failure nothing is left held, so a
+ * caller that gives up on this descriptor need not unwind.
+ */
+static __inline int
+rtems_bsd_scan_acquire(struct thread *td, struct filedesc *fdp, int libio_fd,
+    bool only_user, struct file **fpp)
+{
+	rtems_libio_t *iop;
+	int error;
+	int bsd_fd = rtems_bsd_libio_iop_hold(libio_fd, &iop);
+
+	if (bsd_fd < 0)
+		return (EBADF);
+	if (iop != NULL) {
+		/* not libbsd-backed: it has no struct file */
+		*fpp = NULL;
+		return (0);
+	}
+	if (only_user)
+		error = fget_only_user(fdp, bsd_fd, &cap_event_rights, fpp);
+	else
+		error = fget_unlocked(td, bsd_fd, &cap_event_rights, fpp);
+	if (__predict_false(error != 0))
+		rtems_bsd_libio_iop_drop(libio_fd);
+	return (error);
+}
+
+#endif /* __rtems__ */
 /*
  * Traverse the list of fds attached to this thread's seltd and check for
  * completion.
@@ -1459,29 +1492,15 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 		if (si != NULL)
 			continue;
 #ifdef __rtems__
-		rtems_libio_t *iop;
-		int fd_tmp;
-		bool libbsd_fd = true;
-		int ffd = rtems_bsd_libio_iop_hold(fd, &iop);
-		if (ffd < 0)
-			return EBADF;
-		if (iop != NULL) {
-			fp = NULL;
-			libbsd_fd = false;
-		}
-		fd_tmp = fd;
-		fd = ffd;
-		if (libbsd_fd) {
-#endif /* __rtems__ */
+		error = rtems_bsd_scan_acquire(td, fdp, fd, only_user, &fp);
+#else /* __rtems__ */
 		if (only_user)
 			error = fget_only_user(fdp, fd, &cap_event_rights, &fp);
 		else
 			error = fget_unlocked(td, fd, &cap_event_rights, &fp);
+#endif /* __rtems__ */
 		if (__predict_false(error != 0))
 			return (error);
-#ifdef __rtems__
-		}
-#endif /* __rtems__ */
 		idx = fd / NFDBITS;
 		bit = (fd_mask)1 << (fd % NFDBITS);
 #ifndef __rtems__
@@ -1490,15 +1509,18 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 		ev = rtems_bsd_libio_fo_poll(fd, fp, selflags(ibits, idx, bit),
 					     td->td_ucred, td);
 #endif /* __rtems__ */
+#ifdef __rtems__
+		if (fp != NULL) {
+#endif /* __rtems__ */
 		if (only_user)
 			fput_only_user(fdp, fp);
 		else
 			fdrop(fp, td);
+#ifdef __rtems__
+		}
+#endif /* __rtems__ */
 		if (ev != 0)
 			n += selsetbits(ibits, obits, idx, bit, ev);
-#ifdef __rtems__
-		fd = fd_tmp;
-#endif /* __rtems__ */
 	}
 	stp->st_flags = 0;
 	td->td_retval[0] = n;
@@ -1531,47 +1553,34 @@ selscan(struct thread *td, fd_mask **ibits, fd_mask **obits, int nfd)
 			if (flags == 0)
 				continue;
 #ifdef __rtems__
-			rtems_libio_t *iop;
-			int fd_tmp;
-			bool libbsd_fd = true;
-			int ffd = rtems_bsd_libio_iop_hold(fd, &iop);
-			if (ffd < 0)
-				return EBADF;
-			if (iop != NULL) {
-				fp = NULL;
-				libbsd_fd = false;
-			}
-			fd_tmp = fd;
-			fd = ffd;
-			if (libbsd_fd) {
-#endif /* __rtems__ */
+			error = rtems_bsd_scan_acquire(td, fdp, fd, only_user, &fp);
+#else /* __rtems__ */
 			if (only_user)
 				error = fget_only_user(fdp, fd, &cap_event_rights, &fp);
 			else
 				error = fget_unlocked(td, fd, &cap_event_rights, &fp);
+#endif /* __rtems__ */
 			if (__predict_false(error != 0))
 				return (error);
-#ifdef __rtems__
-			}
-#endif /* __rtems__ */
-#ifndef __rtems__
 			selfdalloc(td, (void *)(uintptr_t)fd);
+#ifndef __rtems__
 			ev = fo_poll(fp, flags, td->td_ucred, td);
 #else /* __rtems__ */
-			selfdalloc(td, (void *)(uintptr_t)fd_tmp);
-			ev = rtems_bsd_libio_fo_poll(fd, fp,
-						     selflags(ibits, idx, bit),
+			ev = rtems_bsd_libio_fo_poll(fd, fp, flags,
 						     td->td_ucred, td);
+#endif /* __rtems__ */
+#ifdef __rtems__
+			if (fp != NULL) {
 #endif /* __rtems__ */
 			if (only_user)
 				fput_only_user(fdp, fp);
 			else
 				fdrop(fp, td);
+#ifdef __rtems__
+			}
+#endif /* __rtems__ */
 			if (ev != 0)
 				n += selsetbits(ibits, obits, idx, bit, ev);
-#ifdef __rtems__
-		fd = fd_tmp;
-#endif /* __rtems__ */
 		}
 	}
 
@@ -1791,25 +1800,7 @@ pollrescan(struct thread *td)
 		else
 			error = fget_unlocked(td, fd->fd, &cap_event_rights, &fp);
 #else /* __rtems__ */
-		rtems_libio_t* iop;
-		bool libbsd_fd = true;
-		error = 0;
-		int ffd = rtems_bsd_libio_iop_hold(fd->fd, &iop);
-		if (ffd < 0) {
-			fd->revents = POLLNVAL;
-			n++;
-			continue;
-		}
-		if (iop != NULL) {
-			fp = NULL;
-			libbsd_fd = false;
-		}
-		if (libbsd_fd) {
-			if (only_user)
-				error = fget_only_user(fdp, ffd, &cap_event_rights, &fp);
-			else
-				error = fget_unlocked(td, ffd, &cap_event_rights, &fp);
-		}
+		error = rtems_bsd_scan_acquire(td, fdp, fd->fd, only_user, &fp);
 #endif /* __rtems__ */
 		if (__predict_false(error != 0)) {
 			fd->revents = POLLNVAL;
@@ -1823,12 +1814,19 @@ pollrescan(struct thread *td)
 #ifndef __rtems__
 		fd->revents = fo_poll(fp, fd->events, td->td_ucred, td);
 #else /* __rtems__ */
-		fd->revents = rtems_bsd_libio_fo_poll((intptr_t)fd, fp, fd->events, td->td_ucred, td);
+		fd->revents = rtems_bsd_libio_fo_poll(fd->fd, fp, fd->events, td->td_ucred, td);
+#endif /* __rtems__ */
+#ifdef __rtems__
+		/* fp is NULL for a descriptor that is not libbsd-backed */
+		if (fp != NULL) {
 #endif /* __rtems__ */
 		if (only_user)
 			fput_only_user(fdp, fp);
 		else
 			fdrop(fp, td);
+#ifdef __rtems__
+		}
+#endif /* __rtems__ */
 		if (fd->revents != 0)
 			n++;
 	}
@@ -1880,25 +1878,7 @@ pollscan(struct thread *td, struct pollfd *fds, u_int nfd)
 		else
 			error = fget_unlocked(td, fds->fd, &cap_event_rights, &fp);
 #else /* __rtems__ */
-		rtems_libio_t* iop;
-		bool libbsd_fd = true;
-		error = 0;
-		int ffd = rtems_bsd_libio_iop_hold(fds->fd, &iop);
-		if (ffd < 0) {
-			fds->revents = POLLNVAL;
-			n++;
-			continue;
-		}
-		if (iop != NULL) {
-			fp = NULL;
-			libbsd_fd = false;
-		}
-		if (libbsd_fd) {
-			if (only_user)
-				error = fget_only_user(fdp, ffd, &cap_event_rights, &fp);
-			else
-				error = fget_unlocked(td, ffd, &cap_event_rights, &fp);
-		}
+		error = rtems_bsd_scan_acquire(td, fdp, fds->fd, only_user, &fp);
 #endif /* __rtems__ */
 		if (__predict_false(error != 0)) {
 			fds->revents = POLLNVAL;
@@ -1914,13 +1894,20 @@ pollscan(struct thread *td, struct pollfd *fds, u_int nfd)
 		fds->revents = fo_poll(fp, fds->events,
 		    td->td_ucred, td);
 #else /* __rtems__ */
-		fds->revents = rtems_bsd_libio_fo_poll(ffd, fp, fds->events,
+		fds->revents = rtems_bsd_libio_fo_poll(fds->fd, fp, fds->events,
 		    td->td_ucred, td);
+#endif /* __rtems__ */
+#ifdef __rtems__
+		/* fp is NULL for a descriptor that is not libbsd-backed */
+		if (fp != NULL) {
 #endif /* __rtems__ */
 		if (only_user)
 			fput_only_user(fdp, fp);
 		else
 			fdrop(fp, td);
+#ifdef __rtems__
+		}
+#endif /* __rtems__ */
 		/*
 		 * POSIX requires POLLOUT to be never
 		 * set simultaneously with POLLHUP.

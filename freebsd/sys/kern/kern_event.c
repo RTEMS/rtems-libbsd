@@ -1608,9 +1608,7 @@ findkn:
 			else {
 				if (iop == NULL) {
 					error = fget(td, ffd, &cap_event_rights, &fp);
-					if (!error) {
-						rtems_bsd_libio_iop_drop(kev->ident);
-					}
+					rtems_bsd_libio_iop_drop(kev->ident);
 				} else {
 					fp = NULL;
 				}

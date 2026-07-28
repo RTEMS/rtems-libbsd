@@ -143,7 +143,7 @@ rtems_bsd_libio_iop_set_bsd_fd(struct thread *td, int fd, rtems_libio_t *iop,
 		if (fp != NULL) {
 			rtems_bsd_libio_iop_set_bsd_file(iop, fp);
 			rtems_libio_iop_flags_set(iop,
-			    LIBIO_FLAGS_OPEN |
+			    LIBIO_FLAGS_OPEN | LIBIO_FLAGS_CLOSE_BUSY |
 				rtems_bsd_libio_fflag_to_flags(fp->f_flag));
 			if (ops != NULL)
 				iop->pathinfo.handlers = ops;

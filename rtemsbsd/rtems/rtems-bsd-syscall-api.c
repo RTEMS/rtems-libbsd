@@ -41,6 +41,7 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
+#include <sys/capsicum.h>
 #include <sys/dirent.h>
 #include <sys/file.h>
 #include <sys/filedesc.h>
@@ -60,6 +61,8 @@
 #include <rtems/seterr.h>
 #include <stdio.h>
 
+static int rtems_bsd_sysgen_dup(
+    rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
 static int rtems_bsd_sysgen_open_error(
     rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
 static int rtems_bsd_sysgen_opendir(
@@ -131,7 +134,7 @@ const rtems_filesystem_file_handlers_r rtems_bsd_sysgen_fileops = {
 };
 
 const rtems_filesystem_file_handlers_r rtems_bsd_sysgen_nodeops = {
-	.open_h = rtems_bsd_sysgen_open_error,
+	.open_h = rtems_bsd_sysgen_dup,
 	.close_h = rtems_bsd_sysgen_close,
 	.read_h = rtems_bsd_sysgen_read,
 	.write_h = rtems_bsd_sysgen_write,
@@ -150,7 +153,7 @@ const rtems_filesystem_file_handlers_r rtems_bsd_sysgen_nodeops = {
 };
 
 const rtems_filesystem_file_handlers_r rtems_bsd_sysgen_imfsnodeops = {
-	.open_h = rtems_bsd_sysgen_open_error,
+	.open_h = rtems_bsd_sysgen_dup,
 	.close_h = rtems_bsd_sysgen_close,
 	.read_h = rtems_bsd_sysgen_read,
 	.write_h = rtems_bsd_sysgen_write,
@@ -887,6 +890,61 @@ rtems_bsd_sysgen_open_error(
 	return rtems_bsd_error_to_status_and_errno(ENXIO);
 }
 
+/*
+ * duplicate_iop() in cpukit/libcsupport/src/fcntl.c calls the open handler
+ * with a NULL path to duplicate a descriptor.  The clone of the location it
+ * hands us carries the source iop in its node access, which is where the BSD
+ * descriptor to duplicate comes from.  Installing the same file under a second
+ * BSD descriptor gives POSIX dup() semantics: one open file description, two
+ * descriptors.
+ */
+static int
+rtems_bsd_sysgen_dup(
+    rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
+{
+	struct thread *td;
+	rtems_libio_t *oiop;
+	struct file *fp;
+	int nfd;
+	int error;
+
+	if (path != NULL) {
+		return rtems_bsd_error_to_status_and_errno(ENXIO);
+	}
+	td = rtems_bsd_get_curthread_or_null();
+	if (td == NULL) {
+		return rtems_bsd_error_to_status_and_errno(ENOMEM);
+	}
+	oiop = rtems_bsd_libio_loc_to_iop(&iop->pathinfo);
+	if (oiop == NULL || oiop == iop) {
+		return rtems_bsd_error_to_status_and_errno(EBADF);
+	}
+	error = fget(td, rtems_bsd_libio_iop_to_descriptor(oiop),
+	    &cap_no_rights, &fp);
+	if (error != 0) {
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	error = finstall(td, fp, &nfd,
+	    (oflag & O_CLOEXEC) != 0 ? O_CLOEXEC : 0, NULL);
+	fdrop(fp, td);
+	if (error != 0) {
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	error = rtems_bsd_libio_iop_set_bsd_fd(
+	    td, nfd, iop, iop->pathinfo.handlers);
+	if (error != 0) {
+		kern_close(td, nfd);
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	if (RTEMS_BSD_SYSCALL_TRACE) {
+		printf("bsd: sys: dup: %d (%d) => %d -> %d\n",
+		    rtems_libio_iop_to_descriptor(oiop),
+		    rtems_bsd_libio_iop_to_descriptor(oiop),
+		    rtems_libio_iop_to_descriptor(iop), nfd);
+	}
+	return 0;
+}
+
 static int
 rtems_bsd_sysgen_open_node(
 	rtems_libio_t *iop, const char *path, int oflag, mode_t mode, bool isdir)
@@ -904,6 +962,15 @@ rtems_bsd_sysgen_open_node(
 	int fd;
 	int error;
 
+	if (path == NULL) {
+		/*
+		 * A duplicate.  The clone of a vnode location carries the
+		 * vnode rather than the source iop, so the descriptor to
+		 * duplicate cannot be recovered here.  Refuse rather than
+		 * walk off the NULL path below.
+		 */
+		return rtems_bsd_error_to_status_and_errno(ENOTSUP);
+	}
 	if (td == NULL) {
 		if (RTEMS_BSD_SYSCALL_TRACE) {
 			printf("bsd: sys: open: no curthread\n");
@@ -1048,7 +1115,19 @@ rtems_bsd_sysgen_close(rtems_libio_t *iop)
 	}
 	if (td != NULL) {
 		if (ffd >= 0) {
-			rtems_libio_iop_hold(iop);
+			struct filedesc *fdp = td->td_proc->p_fd;
+			struct file *fp;
+			/*
+			 * kern_close() drops one reference on the iop the file
+			 * pinned, which for a duplicate is not this iop.  Hold
+			 * the one that is going to be dropped.
+			 */
+			FILEDESC_XLOCK(fdp);
+			fp = ffd < fdp->fd_nfiles ? fget_noref(fdp, ffd) :
+			    NULL;
+			rtems_libio_iop_hold(
+			    fp != NULL && fp->f_io != NULL ? fp->f_io : iop);
+			FILEDESC_XUNLOCK(fdp);
 			error = kern_close(td, ffd);
 		} else {
 			error = EBADF;

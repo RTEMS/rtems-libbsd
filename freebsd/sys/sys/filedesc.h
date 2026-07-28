@@ -55,11 +55,23 @@ struct filecaps {
 	uint32_t	 fc_fcntls;	/* per-descriptor allowed fcntls */
 };
 
+#ifdef __rtems__
+struct rtems_libio_tt;
+#endif /* __rtems__ */
 struct filedescent {
 	struct file	*fde_file;	/* file structure for open file */
 	struct filecaps	 fde_caps;	/* per-descriptor rights */
 	uint8_t		 fde_flags;	/* per-process open file flags */
 	seqc_t		 fde_seqc;	/* keep file and caps in sync */
+#ifdef __rtems__
+	/*
+	 * The libio descriptor this file descriptor was installed for.  It
+	 * belongs to the descriptor rather than to the file so that a
+	 * duplicate can share the file and still have a libio descriptor,
+	 * knote identity and reference count of its own.
+	 */
+	struct rtems_libio_tt *fde_io;
+#endif /* __rtems__ */
 };
 #define	fde_rights	fde_caps.fc_rights
 #define	fde_fcntls	fde_caps.fc_fcntls

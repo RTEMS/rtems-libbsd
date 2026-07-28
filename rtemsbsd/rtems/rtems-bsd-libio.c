@@ -44,13 +44,66 @@
 #include <machine/rtems-bsd-libio.h>
 
 #include <rtems/libio.h>
+#include <rtems/libio_.h>
+
+/*
+ * A libbsd descriptor is not on a file system, but it is not an invalid
+ * location either.  It used to borrow rtems_filesystem_null_mt_entry, whose
+ * operations refuse everything including the clone that fcntl(F_DUPFD) needs,
+ * so it has a mount entry of its own.  Only the clone and the two instance
+ * locks are ever reached through it; everything else keeps the refusing
+ * default.  Locking stays a no-op, as it was with the null entry.
+ *
+ * mounted is true so that removing the last location can never let
+ * rtems_filesystem_location_remove_from_mt_entry() decide this static entry is
+ * ready to be unmounted.
+ */
+static void
+rtems_bsd_libio_mt_lock_or_unlock(
+    const rtems_filesystem_mount_table_entry_t *mt_entry)
+{
+	(void)mt_entry;
+}
+
+static const rtems_filesystem_operations_table rtems_bsd_libio_mt_ops = {
+	.lock_h = rtems_bsd_libio_mt_lock_or_unlock,
+	.unlock_h = rtems_bsd_libio_mt_lock_or_unlock,
+	.eval_path_h = rtems_filesystem_default_eval_path,
+	.link_h = rtems_filesystem_default_link,
+	.are_nodes_equal_h = rtems_filesystem_default_are_nodes_equal,
+	.mknod_h = rtems_filesystem_default_mknod,
+	.rmnod_h = rtems_filesystem_default_rmnod,
+	.fchmod_h = rtems_filesystem_default_fchmod,
+	.chown_h = rtems_filesystem_default_chown,
+	.clonenod_h = rtems_filesystem_default_clonenode,
+	.freenod_h = rtems_filesystem_default_freenode,
+	.mount_h = rtems_filesystem_default_mount,
+	.unmount_h = rtems_filesystem_default_unmount,
+	.fsunmount_me_h = rtems_filesystem_default_fsunmount,
+	.utimens_h = rtems_filesystem_default_utimens,
+	.symlink_h = rtems_filesystem_default_symlink,
+	.readlink_h = rtems_filesystem_default_readlink,
+	.rename_h = rtems_filesystem_default_rename,
+	.statvfs_h = rtems_filesystem_default_statvfs
+};
+
+static rtems_filesystem_mount_table_entry_t rtems_bsd_libio_mt_entry = {
+	.location_chain = RTEMS_CHAIN_INITIALIZER_EMPTY(
+	    rtems_bsd_libio_mt_entry.location_chain),
+	.ops = &rtems_bsd_libio_mt_ops,
+	.mt_point_node = &rtems_filesystem_global_location_null,
+	.mt_fs_root = &rtems_filesystem_global_location_null,
+	.mounted = true,
+	.writeable = true,
+	.type = "libbsd"
+};
 
 rtems_libio_t *
 rtems_bsd_libio_iop_allocate(void)
 {
 	rtems_libio_t *iop = rtems_libio_allocate();
 	if (iop != NULL) {
-		iop->pathinfo.mt_entry = &rtems_filesystem_null_mt_entry;
+		iop->pathinfo.mt_entry = &rtems_bsd_libio_mt_entry;
 		rtems_filesystem_location_add_to_mt_entry(&iop->pathinfo);
 	}
 	return iop;
@@ -95,6 +148,7 @@ rtems_bsd_libio_iop_set_bsd_fd(struct thread *td, int fd, rtems_libio_t *iop,
 			if (ops != NULL)
 				iop->pathinfo.handlers = ops;
 			rtems_bsd_libio_iop_set_bsd_descriptor(iop, fd);
+			fdp->fd_ofiles[fd].fde_io = iop;
 			error = 0;
 		} else {
 			error = EBADF;

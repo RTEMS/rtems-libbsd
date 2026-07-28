@@ -320,22 +320,27 @@ rtems_bsd_libio_iop_drop(int fd)
 	return 0;
 }
 
+/*
+ * libio_fd is the descriptor rtems_bsd_libio_iop_hold() was called with, and
+ * the reference this drops is the one that call took.  fp is NULL for a
+ * descriptor that is not libbsd-backed, in which case its own poll handler
+ * answers.
+ */
 static inline int
-rtems_bsd_libio_fo_poll(int fd, struct file *fp, int events,
+rtems_bsd_libio_fo_poll(int libio_fd, struct file *fp, int events,
     struct ucred *active_cred, struct thread *td)
 {
 	int error;
 	if (fp == NULL) {
-		rtems_libio_t *iop = rtems_libio_iop(fd);
+		rtems_libio_t *iop = rtems_libio_iop(libio_fd);
 		error = (*iop->pathinfo.handlers->poll_h)(iop, events);
 	} else {
 		if (RTEMS_BSD_DESCRIP_TRACE)
-			printf("bsd: iop: fo_poll: fd=%d, fp=%p by %p\n", fd,
-			    fd, fp, __builtin_return_address(0));
+			printf("bsd: iop: fo_poll: fd=%d, fp=%p by %p\n",
+			    libio_fd, fp, __builtin_return_address(0));
 		error = (*fp->f_ops->fo_poll)(fp, events, active_cred, td);
-		fd = rtems_bsd_file_to_libio_fd(fp);
 	}
-	rtems_bsd_libio_iop_drop(fd);
+	rtems_bsd_libio_iop_drop(libio_fd);
 	return error;
 }
 

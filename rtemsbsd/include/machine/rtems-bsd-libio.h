@@ -126,9 +126,15 @@ rtems_bsd_is_libbsd_descriptor(rtems_libio_t *iop)
 static inline rtems_libio_t *
 rtems_bsd_libio_loc_to_iop(const rtems_filesystem_location_info_t *loc)
 {
-	return (rtems_libio_t *)RTEMS_DECONST(
+	rtems_libio_t *iop = (rtems_libio_t *)RTEMS_DECONST(
 	    rtems_filesystem_location_info_t *, loc)
 	    ->node_access;
+
+	if (iop < rtems_libio_iops ||
+	    iop >= &rtems_libio_iops[rtems_libio_number_iops]) {
+		return (NULL);
+	}
+	return (iop);
 }
 
 struct socket;
@@ -210,10 +216,41 @@ rtems_bsd_libio_iop_set_bsd_descriptor(rtems_libio_t *iop, int fd)
 	}
 }
 
+/*
+ * The first descriptor installed for a file becomes the one the file pins.
+ * fget_unlocked() and fdrop() have no descriptor to work from, so they charge
+ * this iop.  Every setter of f_io already holds the iop once on its own
+ * (rtems_bsd_libio_iop_allocate_with_file(), devfs_imfs_open()), and the
+ * final fdrop() of the file performs the one unpaired f_io drop that
+ * releases the pin, so no reference is taken here; a second descriptor
+ * installed for the same file leaves the pin where it is.
+ */
 static inline void
 rtems_bsd_libio_iop_set_bsd_file(rtems_libio_t *iop, struct file *fp)
 {
-	fp->f_io = iop;
+	if (fp->f_io == NULL) {
+		fp->f_io = iop;
+	}
+}
+
+/*
+ * Map a BSD file descriptor back to the libio descriptor it was installed
+ * for.  Falls back to the file's pinned descriptor for files installed before
+ * the descriptor knew its iop, and to the descriptor itself for the ones that
+ * are not libbsd descriptors at all.
+ */
+static inline int
+rtems_bsd_bsd_fd_to_libio_fd(struct filedesc *fdp, int fd, struct file *fp)
+{
+	rtems_libio_t *iop = NULL;
+
+	if (fdp != NULL && fd >= 0 && fd < fdp->fd_nfiles) {
+		iop = fdp->fd_ofiles[fd].fde_io;
+	}
+	if (iop == NULL && fp != NULL) {
+		iop = fp->f_io;
+	}
+	return iop != NULL ? (int)(iop - rtems_libio_iops) : fd;
 }
 
 /*

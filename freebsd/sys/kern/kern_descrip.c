@@ -74,6 +74,7 @@
 #include <sys/sysctl.h>
 #include <sys/sysproto.h>
 #include <rtems/bsd/sys/unistd.h>
+#include <machine/rtems-bsd-libio.h>
 #include <sys/user.h>
 #include <sys/vnode.h>
 #include <sys/ktrace.h>
@@ -2185,6 +2186,9 @@ _finstall(struct filedesc *fdp, struct file *fp, int fd, int flags,
 	seqc_write_begin(&fde->fde_seqc);
 #endif
 	fde->fde_file = fp;
+#ifdef __rtems__
+	fde->fde_io = NULL;
+#endif /* __rtems__ */
 	fde->fde_flags = (flags & O_CLOEXEC) != 0 ? UF_EXCLOSE : 0;
 	if (fcaps != NULL)
 		filecaps_move(fcaps, &fde->fde_caps);

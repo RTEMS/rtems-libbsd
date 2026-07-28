@@ -5905,6 +5905,7 @@ class tests(builder.Module):
                                           extraLibs = ['ftpfs', 'ftpd']))
         self.addTest(mm.generator['test']('ping01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('selectpollkqueue01', ['test_main']))
+        self.addTest(mm.generator['test']('dup01', ['test_main']))
         self.addTest(mm.generator['test']('rwlock01', ['test_main']))
         self.addTest(mm.generator['test']('sleep01', ['test_main']))
         self.addTest(mm.generator['test']('syscalls01', ['test_main']))

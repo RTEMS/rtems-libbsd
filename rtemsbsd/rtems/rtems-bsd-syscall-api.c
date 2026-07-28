@@ -1265,7 +1265,8 @@ rtems_bsd_sysgen_read(rtems_libio_t *iop, void *buffer, size_t count)
 
 	if (RTEMS_BSD_SYSCALL_TRACE) {
 		printf("bsd: sys: read: %d -> %d: vn=%p vn-type=%d len=%d\n",
-		   rtems_libio_iop_to_descriptor(iop), fd, vp, vp->v_type, count);
+		   rtems_libio_iop_to_descriptor(iop), fd, vp,
+		   vp != NULL ? (int)vp->v_type : -1, count);
 	}
 
 	if (td == NULL) {

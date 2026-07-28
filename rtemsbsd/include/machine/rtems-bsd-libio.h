@@ -175,9 +175,18 @@ rtems_bsd_libio_iop_to_descriptor(rtems_libio_t *iop)
 	return (int)iop->data0;
 }
 
+/*
+ * node_access carries a vnode only for the descriptors opened through the
+ * VFS.  For every other libbsd descriptor -- socket, kqueue, pipe -- the iop
+ * itself is parked there by rtems_bsd_libio_iop_set_bsd_descriptor(), so
+ * reading a vnode out of it reads past the end of the iop.  Answer NULL for
+ * those rather than hand back a punned pointer.
+ */
 static struct vnode *
 rtems_bsd_libio_iop_to_vnode(rtems_libio_t *iop)
 {
+	if (!rtems_bsd_is_libbsd_nvops(iop))
+		return (NULL);
 	return rtems_bsd_libio_loc_to_vnode(&iop->pathinfo);
 }
 

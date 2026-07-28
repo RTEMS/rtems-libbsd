@@ -242,6 +242,48 @@ test_unix_listen_connect_accept_write_read(void)
 }
 
 static void
+test_unix_socketpair_read(void)
+{
+	/*
+	 * rtems_bsd_sysgen_read() must not treat a socket as a directory.
+	 * It used to read v_type out of a descriptor that has no vnode;
+	 * which word that lands on depends on the descriptor's slot, so
+	 * sweep as many slots as the socket limit allows.
+	 */
+	enum { PAIR_COUNT = 40 };
+	int sp[PAIR_COUNT][2];
+	int made = 0;
+	ssize_t n;
+	int rv;
+	int i;
+	char buf[1];
+
+	puts("test UNIX(4) socketpair read()");
+
+	for (i = 0; i < PAIR_COUNT; ++i) {
+		if (socketpair(AF_UNIX, SOCK_STREAM, 0, sp[i]) != 0)
+			break;
+		++made;
+	}
+	assert(made > 0);
+
+	for (i = 0; i < made; ++i) {
+		n = write(sp[i][1], "x", 1);
+		assert(n == 1);
+		n = read(sp[i][0], &buf[0], sizeof(buf));
+		assert(n == 1);
+		assert(buf[0] == 'x');
+	}
+
+	for (i = 0; i < made; ++i) {
+		rv = close(sp[i][0]);
+		assert(rv == 0);
+		rv = close(sp[i][1]);
+		assert(rv == 0);
+	}
+}
+
+static void
 test_main(void)
 {
 	test_unix_socket(false);
@@ -250,6 +292,7 @@ test_main(void)
 	test_unix_bind(false);
 	test_unix_bind(true);
 	test_unix_listen_connect_accept_write_read();
+	test_unix_socketpair_read();
 
 	exit(0);
 }

@@ -631,7 +631,9 @@ retry:
 	buffer = malloc(size, M_TEMP, M_WAITOK | M_ZERO);
 	if (buffer == NULL) {
 #endif /* __rtems__ */
+#ifndef __rtems__
 		chgpipecnt(cpipe->pipe_pair->pp_owner->cr_ruidinfo, -size, 0);
+#endif /* __rtems__ */
 		if (cpipe->pipe_buffer.buffer == NULL &&
 		    size > SMALL_PIPE_SIZE) {
 			size = SMALL_PIPE_SIZE;
@@ -1713,8 +1715,10 @@ pipe_free_kmem(struct pipe *cpipe)
 
 	if (cpipe->pipe_buffer.buffer != NULL) {
 		atomic_subtract_long(&amountpipekva, cpipe->pipe_buffer.size);
+#ifndef __rtems__
 		chgpipecnt(cpipe->pipe_pair->pp_owner->cr_ruidinfo,
 		    -cpipe->pipe_buffer.size, 0);
+#endif /* __rtems__ */
 #ifndef __rtems__
 		vm_map_remove(pipe_map,
 		    (vm_offset_t)cpipe->pipe_buffer.buffer,

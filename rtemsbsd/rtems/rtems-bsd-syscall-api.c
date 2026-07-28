@@ -61,6 +61,10 @@
 #include <rtems/seterr.h>
 #include <stdio.h>
 
+static int rtems_bsd_pipe(int fildes[2], int flags);
+int pipe(int fildes[2]);
+int pipe2(int fildes[2], int flags);
+
 static int rtems_bsd_sysgen_dup(
     rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
 static int rtems_bsd_sysgen_open_error(
@@ -170,6 +174,84 @@ const rtems_filesystem_file_handlers_r rtems_bsd_sysgen_imfsnodeops = {
 	.writev_h = rtems_bsd_sysgen_writev,
 	.mmap_h = rtems_filesystem_default_mmap
 };
+
+static int
+rtems_bsd_pipe(int fildes[2], int flags)
+{
+	struct thread *td;
+	rtems_libio_t *iop[2];
+	int bfd[2];
+	int error;
+
+	if (RTEMS_BSD_SYSCALL_TRACE) {
+		printf("bsd: sys: pipe: flags=%x\n", flags);
+	}
+	if (fildes == NULL) {
+		return rtems_bsd_error_to_status_and_errno(EFAULT);
+	}
+	if ((flags & ~(O_CLOEXEC | O_NONBLOCK)) != 0) {
+		return rtems_bsd_error_to_status_and_errno(EINVAL);
+	}
+	td = rtems_bsd_get_curthread_or_null();
+	if (td == NULL) {
+		return rtems_bsd_error_to_status_and_errno(ENOMEM);
+	}
+	/*
+	 * Take both iops before the pipe exists so the only failure left
+	 * after kern_pipe() is the descriptor lookup below.
+	 */
+	iop[0] = rtems_bsd_libio_iop_allocate();
+	if (iop[0] == NULL) {
+		return rtems_bsd_error_to_status_and_errno(ENFILE);
+	}
+	iop[1] = rtems_bsd_libio_iop_allocate();
+	if (iop[1] == NULL) {
+		rtems_bsd_libio_iop_free(iop[0]);
+		return rtems_bsd_error_to_status_and_errno(ENFILE);
+	}
+	error = kern_pipe(td, bfd, flags, NULL, NULL);
+	if (error != 0) {
+		rtems_bsd_libio_iop_free(iop[0]);
+		rtems_bsd_libio_iop_free(iop[1]);
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	error = rtems_bsd_libio_iop_set_bsd_fd(
+	    td, bfd[0], iop[0], &rtems_bsd_sysgen_nodeops);
+	if (error == 0) {
+		error = rtems_bsd_libio_iop_set_bsd_fd(
+		    td, bfd[1], iop[1], &rtems_bsd_sysgen_nodeops);
+		if (error != 0) {
+			rtems_libio_iop_flags_clear(iop[0],
+			    LIBIO_FLAGS_OPEN | LIBIO_FLAGS_CLOSE_BUSY);
+		}
+	}
+	if (error != 0) {
+		rtems_bsd_libio_iop_free(iop[0]);
+		rtems_bsd_libio_iop_free(iop[1]);
+		kern_close(td, bfd[0]);
+		kern_close(td, bfd[1]);
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	fildes[0] = rtems_libio_iop_to_descriptor(iop[0]);
+	fildes[1] = rtems_libio_iop_to_descriptor(iop[1]);
+	if (RTEMS_BSD_SYSCALL_TRACE) {
+		printf("bsd: sys: pipe: %d -> %d, %d -> %d\n", fildes[0],
+		    bfd[0], fildes[1], bfd[1]);
+	}
+	return 0;
+}
+
+int
+pipe(int fildes[2])
+{
+	return rtems_bsd_pipe(fildes, 0);
+}
+
+int
+pipe2(int fildes[2], int flags)
+{
+	return rtems_bsd_pipe(fildes, flags);
+}
 
 int
 accept(int socket, struct sockaddr *__restrict address,

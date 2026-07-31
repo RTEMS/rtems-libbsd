@@ -167,6 +167,16 @@ BSP_mve_create(
 );
 
 /*
+ * Install the driver's interrupt handler. Separate from
+ * BSP_mve_create() so the caller can finish constructing the closure
+ * it passed as 'isr_arg'; the vector may be shared, in which case the
+ * handler can be invoked for a foreign device as soon as it is
+ * installed.
+ */
+void
+BSP_mve_setup_irqs(struct mveth_private *mp);
+
+/*
  * Clear multicast hash filter. No multicast frames are accepted
  * after executing this routine (unless the hardware was initialized
  * in 'promiscuous' mode).

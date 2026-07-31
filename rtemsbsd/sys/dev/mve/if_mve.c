@@ -1505,7 +1505,6 @@ BSP_mve_create(
 )
 {
 struct mveth_private *mp;
-rtems_status_code sc;
 
 	if ( unit <= 0 || unit > MV643XXETH_NUM_DRIVER_SLOTS ) {
 		printk(DRVNAME": Bad unit number %i; must be 1..%i\n", unit, MV643XXETH_NUM_DRIVER_SLOTS);
@@ -1563,13 +1562,6 @@ rtems_status_code sc;
 
 	BSP_mve_stop_hw(mp);
 
-	if ( irq_mask ) {
-		sc = rtems_interrupt_handler_install(
-			BSP_IRQ_ETH0 + mp->port_num, "mve", RTEMS_INTERRUPT_SHARED,
-			(rtems_interrupt_handler) mveth_isr, (void*) mp);
-		assert( sc == RTEMS_SUCCESSFUL );
-	}
-
 	if ( rx_ring_size < 0 )
 		irq_mask &= ~ MV643XX_ETH_IRQ_RX_DONE;
 	if ( tx_ring_size < 0 )
@@ -1584,6 +1576,18 @@ rtems_status_code sc;
 	}
 
 	return mp;
+}
+
+void
+BSP_mve_setup_irqs(struct mveth_private *mp)
+{
+	if ( mp->irq_mask || mp->xirq_mask ) {
+		rtems_status_code sc;
+		sc = rtems_interrupt_handler_install(
+			BSP_IRQ_ETH0 + mp->port_num, "mve", RTEMS_INTERRUPT_SHARED,
+			(rtems_interrupt_handler) mveth_isr, (void*) mp);
+		assert( sc == RTEMS_SUCCESSFUL );
+	}
 }
 
 void

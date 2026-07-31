@@ -839,6 +839,12 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 
 	sc->daemonTid = rtems_bsdnet_newproc("MVE", 4096, mve_daemon, (void*)sc);
 
+	/* The vector is shared, so mve_isr() can be invoked for a foreign
+	 * device as soon as the handler is installed; connect it only now
+	 * that sc->mp and sc->daemonTid are set.
+	 */
+	BSP_mve_setup_irqs( mp );
+
 	ether_ifattach( ifp, hwaddr );
 
 #ifdef MVETH_DEBUG

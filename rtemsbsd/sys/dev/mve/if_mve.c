@@ -762,7 +762,7 @@ mveth_init_tx_desc_ring(struct mveth_private *mp);
 int
 BSP_mve_dring_nonsync(struct mveth_private *mp);
 
-static void mveth_isr(rtems_irq_hdl_param unit);
+static void mveth_isr(void *arg);
 
 /* LOW LEVEL SUPPORT ROUTINES */
 
@@ -1566,7 +1566,7 @@ rtems_status_code sc;
 	if ( irq_mask ) {
 		sc = rtems_interrupt_handler_install(
 			BSP_IRQ_ETH0 + mp->port_num, "mve", RTEMS_INTERRUPT_SHARED,
-			(rtems_interrupt_handler) mveth_isr, (void*) mp->port_num);
+			(rtems_interrupt_handler) mveth_isr, (void*) mp);
 		assert( sc == RTEMS_SUCCESSFUL );
 	}
 
@@ -1656,7 +1656,7 @@ BSP_mve_detach(struct mveth_private *mp)
 		rtems_status_code sc;
 		sc = rtems_interrupt_handler_remove(
 			BSP_IRQ_ETH0 + mp->port_num, (rtems_interrupt_handler) mveth_isr,
-			(void*) mp->port_num);
+			(void*) mp);
 		if (sc != RTEMS_SUCCESSFUL)
 			return -1;
 	}

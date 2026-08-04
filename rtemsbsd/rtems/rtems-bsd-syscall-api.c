@@ -45,6 +45,7 @@
 #include <sys/dirent.h>
 #include <sys/file.h>
 #include <sys/filedesc.h>
+#include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/syscallsubr.h>
 #include <sys/sysproto.h>
@@ -62,8 +63,6 @@
 #include <stdio.h>
 
 static int rtems_bsd_pipe(int fildes[2], int flags);
-int pipe(int fildes[2]);
-int pipe2(int fildes[2], int flags);
 
 static int rtems_bsd_sysgen_dup(
     rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
@@ -241,17 +240,27 @@ rtems_bsd_pipe(int fildes[2], int flags)
 	return 0;
 }
 
-int
-pipe(int fildes[2])
+static int
+rtems_bsd_pipe_handler(int fildes[2])
 {
 	return rtems_bsd_pipe(fildes, 0);
 }
 
-int
-pipe2(int fildes[2], int flags)
+static int
+rtems_bsd_pipe2_handler(int fildes[2], int flags)
 {
 	return rtems_bsd_pipe(fildes, flags);
 }
+
+static void
+rtems_bsd_pipe_sysinit(void *arg)
+{
+	(void)arg;
+	rtems_filesystem_register_pipe(rtems_bsd_pipe_handler);
+	rtems_filesystem_register_pipe2(rtems_bsd_pipe2_handler);
+}
+SYSINIT(bsdpipe, SI_SUB_TUNABLES, SI_ORDER_FIRST, rtems_bsd_pipe_sysinit,
+    NULL);
 
 int
 accept(int socket, struct sockaddr *__restrict address,

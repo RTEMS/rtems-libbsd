@@ -300,7 +300,9 @@ bus_dmamap_load_buffer(bus_dma_tag_t dmat, bus_dma_segment_t segs[],
 	vm_offset_t vaddr = (vm_offset_t)buf;
 	int seg;
 
-#ifdef RTEMS_BSP_PCI_MEM_REGION_BASE
+#if defined(RTEMS_BSP_PCI_DMA_REGION_BASE)
+	vaddr += RTEMS_BSP_PCI_DMA_REGION_BASE;
+#elif defined(RTEMS_BSP_PCI_MEM_REGION_BASE)
 	vaddr += RTEMS_BSP_PCI_MEM_REGION_BASE;
 #endif
 

@@ -584,6 +584,14 @@ extern "C" {
     SYSINIT_DRIVER_REFERENCE(dc, pci);
 #endif /* RTEMS_BSD_DRIVER_PCI_DC */
 
+/*
+ * Intel Ethernet Driver (fxp)
+ */
+#if !defined(RTEMS_BSD_DRIVER_PCI_FXP)
+  #define RTEMS_BSD_DRIVER_PCI_FXP                \
+    SYSINIT_DRIVER_REFERENCE(fxp, pci);
+#endif /* RTEMS_BSD_DRIVER_PCI_FXP */
+
 /**
  ** MMI Physical Layer Support.
  **/

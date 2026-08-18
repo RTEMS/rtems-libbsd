@@ -363,6 +363,14 @@ legacy_pcib_is_host_bridge(int bus, int slot, int func,
 		s = "Marvell Host to PCI Bridge";
 		*busnum = bus;
 		break;
+	case 0x48011057:
+		s = "Motorola Raven Host to PCI Bridge";
+		*busnum = bus;
+		break;
+	case 0x48031057:
+		s = "Motorola Hawk Host to PCI Bridge";
+		*busnum = bus;
+		break;
 #endif /* __rtems__ */
 
 	default:

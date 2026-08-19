@@ -152,6 +152,9 @@ SYSINIT_DRIVER_REFERENCE(simplebus, ofwbus);
 SYSINIT_DRIVER_REFERENCE(genet, simplebus);
 SYSINIT_DRIVER_REFERENCE(brgphy, miibus);
 
+SYSINIT_DRIVER_REFERENCE(sdhci_bcm, simplebus);
+RTEMS_BSD_DRIVER_MMC;
+
 SYSINIT_DRIVER_REFERENCE(rtems_pic, simplebus);
 
 #elif defined(LIBBSP_ARM_ATSAM_BSP_H)

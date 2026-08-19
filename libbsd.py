@@ -751,7 +751,6 @@ class mmc(builder.Module):
                 'sys/dev/mmc/mmc_subr.h',
                 'sys/dev/mmc/mmcvar.h',
                 'sys/sys/watchdog.h',
-                'rtems/mmcsd.h',
             ]
         )
         self.addKernelSpaceSourceFiles(
@@ -766,6 +765,44 @@ class mmc(builder.Module):
             [
                 'sys/dev/mmc/mmcsd.c',
                 'sys/arm/at91/at91_mci.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addRTEMSHeaderFiles(
+            [
+                'rtems/mmcsd.h',
+            ]
+        )
+
+#
+# MMC
+#
+class mmc_broadcom(builder.Module):
+    def __init__(self, manager):
+        super(mmc_broadcom, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/arm/broadcom/bcm2835/bcm2835_dma.h',
+                'sys/arm/broadcom/bcm2835/bcm2835_mbox_prop.h',
+                'sys/dev/mmc/mmc_fdt_helpers.h',
+                'sys/dev/mmc/mmc_helpers.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/arm/broadcom/bcm2835/bcm2835_sdhci.c',
+                'sys/dev/mmc/mmc_fdt_helpers.c',
+                'sys/dev/mmc/mmc_helpers.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addRTEMSKernelSourceFiles(
+            [
+                'local/mmc_pwrseq_if.c',
+                'sys/arm/broadcom/bcm2835/bcm2835_sdhci_rtems.c',
             ],
             mm.generator['source']()
         )
@@ -2089,7 +2126,6 @@ class netinet(builder.Module):
                 'sys/netinet/sctp_lock_bsd.h',
                 'sys/netinet/sctp_os_bsd.h',
                 'sys/netinet/sctp_os.h',
-                'sys/netinet/ectp_output.h',
                 'sys/netinet/sctp_pcb.h',
                 'sys/netinet/sctp_peeloff.h',
                 'sys/netinet/sctp_structs.h',
@@ -3119,6 +3155,10 @@ class pci(builder.Module):
                 'sys/powerpc/include/platformvar.h',
                 'sys/powerpc/include/hid.h',
                 'sys/powerpc/include/pio.h',
+            ]
+        )
+        self.addRTEMSHeaderFiles(
+            [
                 'sys/dev/xilinx/xlnx_nwl_pcib.h',
             ]
         )
@@ -5994,6 +6034,7 @@ def load(mm):
     mm.addModule(fdt(mm))
     mm.addModule(tty(mm))
     mm.addModule(mmc(mm))
+    mm.addModule(mmc_broadcom(mm))
     mm.addModule(mmc_ti(mm))
     mm.addModule(dev_input(mm))
     mm.addModule(evdev(mm))

@@ -63,7 +63,9 @@
 #ifdef NOTYET
 #include <arm/broadcom/bcm2835/bcm2835_clkman.h>
 #endif
+#ifndef __rtems__
 #include <arm/broadcom/bcm2835/bcm2835_vcbus.h>
+#endif
 
 #define	BCM2835_DEFAULT_SDHCI_FREQ	50
 #define	BCM2838_DEFAULT_SDHCI_FREQ	100
@@ -108,7 +110,11 @@ SYSCTL_INT(_hw_sdhci, OID_AUTO, bcm2835_sdhci_debug, CTLFLAG_RWTUN,
 #endif
 
 static int bcm2835_sdhci_hs = 1;
+#ifndef __rtems__
 static int bcm2835_sdhci_pio_mode = 0;
+#else /* rtems */
+static int bcm2835_sdhci_pio_mode = 1;
+#endif
 
 struct bcm_mmc_conf {
 	int	clock_id;

@@ -215,6 +215,10 @@ static int rtems_pic_teardown_intr(device_t dev, struct intr_irqsrc *isrc,
 
 static void rtems_pic_post_filter(device_t dev,
     struct intr_irqsrc *isrc) {
+    struct rtems_pic_irqsrc* risrc;
+
+    risrc = (struct rtems_pic_irqsrc*)isrc;
+    rtems_interrupt_vector_enable(risrc->irq);
 }
 
 static void rtems_pic_post_ithread(device_t dev,

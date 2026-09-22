@@ -519,8 +519,8 @@ extern "C" {
  * NXP QorIQ Network Driver.
  */
 #if !defined(RTEMS_BSD_DRIVER_TSEC)
-  #define RTEMS_BSD_DRIVER_TSEC(_base, _tx_irq, _rx_irq, _er_irq)   \
-    static const rtems_bsd_device_resource tsec0_res[] = {          \
+  #define RTEMS_BSD_DRIVER_TSEC(_num, _base, _tx_irq, _rx_irq, _er_irq) \
+    static const rtems_bsd_device_resource tsec##_num##_res[] = {   \
       {                                                             \
         .type = RTEMS_BSD_RES_MEMORY,                               \
         .start_request = 0,                                         \
@@ -539,9 +539,9 @@ extern "C" {
         .start_actual = (_er_irq)                                   \
       }                                                             \
     };                                                              \
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(tsec, 0,                          \
-                                  RTEMS_ARRAY_SIZE(tsec0_res),      \
-                                  &tsec0_res[0])
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(tsec, _num,                       \
+                                  RTEMS_ARRAY_SIZE(tsec##_num##_res), \
+                                  &tsec##_num##_res[0])
 #endif /* RTEMS_BSD_DRIVER_TSEC */
 
 /*

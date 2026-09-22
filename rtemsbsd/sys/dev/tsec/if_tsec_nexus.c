@@ -69,6 +69,9 @@ __FBSDID("$FreeBSD$");
 #define	TSEC_RID_RXIRQ	1
 #define	TSEC_RID_ERRIRQ	2
 
+static int tsec_phy_addrs[2] = {1,2};
+static uint32_t tsec_shared_phy_base;
+
 static int tsec_fdt_probe(device_t dev);
 static int tsec_fdt_attach(device_t dev);
 static int tsec_fdt_detach(device_t dev);
@@ -151,8 +154,7 @@ tsec_fdt_attach(device_t dev)
 	sc = device_get_softc(dev);
 	sc->dev = dev;
 
-	/* FIXME */
-	sc->phyaddr = -1;
+	sc->phyaddr = tsec_phy_addrs[device_get_unit(dev)];
 
 	/* Init timer */
 	callout_init(&sc->tsec_callout, 1);
@@ -175,6 +177,9 @@ tsec_fdt_attach(device_t dev)
 	}
 	sc->sc_bas.bsh = rman_get_bushandle(sc->sc_rres);
 	sc->sc_bas.bst = rman_get_bustag(sc->sc_rres);
+	if (device_get_unit(dev) == 0)
+		tsec_shared_phy_base = sc->sc_bas.bsh;
+	sc->phy_bsh = tsec_shared_phy_base + TSEC_REG_MIIBASE;
 
 	/* TSEC attach */
 	if (tsec_attach(sc) != 0) {
@@ -226,7 +231,8 @@ tsec_setup_intr(struct tsec_softc *sc, struct resource **ires, void **ihand,
 {
 	int error;
 
-	*ires = bus_alloc_resource_any(sc->dev, SYS_RES_IRQ, irid, RF_ACTIVE);
+	*ires = bus_alloc_resource(sc->dev, SYS_RES_IRQ, irid, *irid, ~0, 1,
+	    RF_ACTIVE);
 	if (*ires == NULL) {
 		device_printf(sc->dev, "could not allocate %s IRQ\n", iname);
 		return (ENXIO);
@@ -304,6 +310,14 @@ tsec_fdt_detach(device_t dev)
 void
 tsec_get_hwaddr(struct tsec_softc *sc, uint8_t *addr)
 {
-	rtems_bsd_get_mac_address(device_get_name(sc->dev),
-	    device_get_unit(sc->dev), addr);
+	union {
+		uint32_t reg[2];
+		uint8_t addr[6];
+	} hw;
+	int i;
+
+	hw.reg[0] = TSEC_READ(sc, TSEC_REG_MACSTNADDR1);
+	hw.reg[1] = TSEC_READ(sc, TSEC_REG_MACSTNADDR2);
+	for (i = 0; i < 6; i++)
+		addr[5 - i] = hw.addr[i];
 }

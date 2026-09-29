@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * Copyright (c) 2019 Emmanuel Vadot <manu@FreeBSD.org>
  *
@@ -46,9 +48,9 @@
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
 
-#include "syscon_if.h"
+#include <rtems/bsd/local/syscon_if.h>
 #include <dev/extres/syscon/syscon.h>
-#include "clkdev_if.h"
+#include <rtems/bsd/local/clkdev_if.h>
 
 #include <arm/ti/ti_cpuid.h>
 

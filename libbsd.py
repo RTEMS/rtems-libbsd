@@ -179,6 +179,7 @@ class rtems(builder.Module):
             [
                 'fs/rootfs/rootfs.c',
                 'local/bus_if.c',
+                'local/clkdev_if.c',
                 'local/clknode_if.c',
                 'local/cryptodev_if.c',
                 'local/device_if.c',
@@ -413,6 +414,9 @@ class base(builder.Module):
                 'sys/contrib/ck/include/gcc/x86/ck_f_pr.h',
                 'sys/contrib/ck/include/gcc/x86/ck_pr.h',
                 'sys/dev/extres/clk/clk.h',
+                'sys/dev/extres/clk/clk_div.h',
+                'sys/dev/extres/clk/clk_gate.h',
+                'sys/dev/extres/clk/clk_mux.h',
                 'sys/dev/extres/syscon/syscon.h',
                 'sys/fs/devfs/devfs_int.h',
                 'sys/fs/pseudofs/pseudofs.h',
@@ -550,7 +554,11 @@ class base(builder.Module):
             [
                 'sys/contrib/ck/src/ck_epoch.c',
                 'sys/dev/extres/clk/clk.c',
+                'sys/dev/extres/clk/clk_div.c',
+                'sys/dev/extres/clk/clk_gate.c',
+                'sys/dev/extres/clk/clk_mux.c',
                 'sys/dev/extres/syscon/syscon.c',
+                'sys/dev/extres/syscon/syscon_generic.c',
                 'sys/fs/deadfs/dead_vnops.c',
                 'sys/kern/init_main.c',
                 'sys/kern/kern_condvar.c',
@@ -819,7 +827,6 @@ class mmc_ti(builder.Module):
         mm = self.manager
         self.addKernelSpaceHeaderFiles(
             [
-                'sys/arm/ti/ti_sysc.h',
                 'sys/dev/sdhci/sdhci.h',
                 'sys/dev/sdhci/sdhci_fdt_gpio.h',
                 'sys/dev/gpio/gpiobusvar.h',
@@ -828,7 +835,6 @@ class mmc_ti(builder.Module):
         self.addKernelSpaceSourceFiles(
             [
                 'sys/arm/ti/ti_sdhci.c',
-                'sys/arm/ti/ti_sysc.c',
                 'sys/dev/gpio/gpiobus.c',
                 'sys/dev/gpio/ofw_gpiobus.c',
                 'sys/dev/sdhci/fsl_sdhci.c',
@@ -1206,11 +1212,6 @@ class dev_usb_controller_bbb(builder.Module):
         self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
-                'sys/arm/ti/ti_cpuid.h',
-                'sys/arm/ti/ti_prcm.h',
-                'sys/arm/ti/ti_scm.h',
-                'sys/arm/ti/tivar.h',
-                'sys/arm/ti/am335x/am335x_scm.h',
                 'sys/dev/usb/controller/musb_otg.h',
                 'sys/sys/timeet.h',
                 'sys/sys/watchdog.h',
@@ -1220,8 +1221,6 @@ class dev_usb_controller_bbb(builder.Module):
         )
         self.addKernelSpaceSourceFiles(
             [
-                'sys/arm/ti/ti_scm.c',
-                'sys/arm/ti/ti_prcm.c',
                 'sys/arm/ti/am335x/am335x_musb.c',
                 'sys/dev/usb/controller/musb_otg.c',
             ],
@@ -5884,6 +5883,47 @@ class imx(builder.Module):
             mm.generator['source']()
         )
 
+class ti_soc(builder.Module):
+    def __init__(self, manager):
+        super(ti_soc, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/arm/ti/am335x/am335x_scm.h',
+                'sys/arm/ti/tivar.h',
+                'sys/arm/ti/ti_cpuid.h',
+                'sys/arm/ti/ti_omap4_cm.h',
+                'sys/arm/ti/ti_prcm.h',
+                'sys/arm/ti/ti_scm.h',
+                'sys/arm/ti/ti_sysc.h',
+                'sys/arm/ti/clk/clock_common.h',
+                'sys/arm/ti/clk/ti_clk_clkctrl.h',
+                'sys/arm/ti/clk/ti_clk_dpll.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/arm/ti/am335x/am335x_scm.c',
+                'sys/arm/ti/ti_omap4_cm.c',
+                'sys/arm/ti/ti_prcm.c',
+                'sys/arm/ti/ti_machdep.c',
+                'sys/arm/ti/ti_scm_syscon.c',
+                'sys/arm/ti/ti_scm.c',
+                'sys/arm/ti/ti_sysc.c',
+                'sys/arm/ti/clk/clock_common.c',
+                'sys/arm/ti/clk/ti_clk_clkctrl.c',
+                'sys/arm/ti/clk/ti_clk_dpll.c',
+                'sys/arm/ti/clk/ti_clkctrl.c',
+                'sys/arm/ti/clk/ti_divider_clock.c',
+                'sys/arm/ti/clk/ti_dpll_clock.c',
+                'sys/arm/ti/clk/ti_gate_clock.c',
+                'sys/arm/ti/clk/ti_mux_clock.c',
+            ],
+            mm.generator['source']()
+        )
+
 class regulator(builder.Module):
     def __init__(self, manager):
         super(regulator, self).__init__(manager, type(self).__name__)
@@ -6090,6 +6130,9 @@ def load(mm):
     mm.addModule(nvme(mm))
     mm.addModule(imx(mm))
     mm.addModule(regulator(mm))
+
+    # TI SOC drivers
+    mm.addModule(ti_soc(mm))
 
     # Add in_chksum
     mm.addModule(in_cksum(mm))

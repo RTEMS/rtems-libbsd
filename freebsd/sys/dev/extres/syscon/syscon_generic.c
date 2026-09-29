@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -48,7 +50,7 @@
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
 
-#include "syscon_if.h"
+#include "rtems/bsd/local/syscon_if.h"
 #include "syscon.h"
 #include "syscon_generic.h"
 

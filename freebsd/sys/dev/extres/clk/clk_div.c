@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * Copyright 2016 Michal Meloun <mmel@FreeBSD.org>
  * All rights reserved.
@@ -35,7 +37,7 @@
 
 #include <dev/extres/clk/clk_div.h>
 
-#include "clkdev_if.h"
+#include <rtems/bsd/local/clkdev_if.h>
 
 #define	WR4(_clk, off, val)						\
 	CLKDEV_WRITE_4(clknode_get_device(_clk), off, val)

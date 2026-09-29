@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-4-Clause
  *
@@ -37,12 +39,15 @@
  * from: FreeBSD: //depot/projects/arm/src/sys/arm/at91/kb920x_machdep.c, rev 45
  */
 
+#ifndef __rtems__
 #include "opt_platform.h"
+#endif /* __rtems__ */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
+#ifndef __rtems__
 #include <sys/devmap.h>
 
 #include <vm/vm.h>
@@ -53,10 +58,13 @@
 #include <machine/platformvar.h>
 
 #include <arm/ti/omap4/omap4_machdep.h>
+#endif /* __rtems__ */
 #include <arm/ti/omap4/omap4_reg.h>
 #include <arm/ti/ti_cpuid.h>
 
+#ifndef __rtems__
 #include "platform_if.h"
+#endif /* __rtems__ */
 
 #if defined(SOC_OMAP4)
 #include "platform_pl310_if.h"
@@ -64,14 +72,17 @@
 static platform_attach_t omap4_attach;
 static platform_devmap_init_t ti_omap4_devmap_init;
 #endif
+#ifndef __rtems__
 #if defined(SOC_TI_AM335X)
 static platform_attach_t ti_am335x_attach;
 static platform_devmap_init_t ti_am335x_devmap_init;
 #endif
 static platform_cpu_reset_t ti_plat_cpu_reset;
+#endif /* __rtems__ */
 
 void (*ti_cpu_reset)(void) = NULL;
 
+#ifndef __rtems__
 int _ti_chip = -1;
 
 #if defined(SOC_OMAP4)
@@ -162,3 +173,4 @@ static platform_method_t am335x_methods[] = {
 
 FDT_PLATFORM_DEF(am335x, "am335x", 0, "ti,am33xx", 200);
 #endif
+#endif /* __rtems__ */

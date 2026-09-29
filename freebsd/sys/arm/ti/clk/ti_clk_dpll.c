@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -38,7 +40,7 @@
 
 #include <arm/ti/clk/ti_clk_dpll.h>
 
-#include "clkdev_if.h"
+#include <rtems/bsd/local/clkdev_if.h>
 
 /*
  * clknode for clocks matching the formula :

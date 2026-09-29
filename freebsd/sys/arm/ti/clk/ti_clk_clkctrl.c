@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -35,7 +37,7 @@
 
 #include <arm/ti/clk/ti_clk_clkctrl.h>
 
-#include "clkdev_if.h"
+#include <rtems/bsd/local/clkdev_if.h>
 
 #if 0
 #define DPRINTF(dev, msg...) device_printf(dev, msg)

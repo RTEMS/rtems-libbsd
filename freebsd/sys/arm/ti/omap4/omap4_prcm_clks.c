@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -44,7 +46,9 @@
 #include <machine/resource.h>
 #include <machine/intr.h>
 
+#ifndef __rtems__
 #include <arm/arm/mpcore_timervar.h>
+#endif /* __rtems__ */
 #include <arm/ti/tivar.h>
 #include <arm/ti/ti_prcm.h>
 #include <arm/ti/omap4/omap4_reg.h>

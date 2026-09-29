@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * Copyright (c) 2016 Rubicon Communications, LLC (Netgate)
  * All rights reserved.
@@ -39,7 +41,7 @@
 #include <arm/ti/ti_scm.h>
 
 #include <dev/extres/syscon/syscon.h>
-#include "syscon_if.h"
+#include <rtems/bsd/local/syscon_if.h>
 
 #define	TZ_ZEROC	2731
 

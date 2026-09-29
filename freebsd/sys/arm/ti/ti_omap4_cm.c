@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -32,7 +34,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
+#ifndef __rtems__
 #include <sys/fbio.h>
+#endif /* __rtems__ */
 #include <sys/kernel.h>
 #include <sys/module.h>
 #include <sys/rman.h>

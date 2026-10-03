@@ -6008,6 +6008,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('thread01', ['test_main']))
         self.addTest(mm.generator['test']('mutex01', ['test_main']))
         self.addTest(mm.generator['test']('condvar01', ['test_main']))
+        self.addTest(mm.generator['test']('counter01', ['test_main']))
         self.addTest(mm.generator['test']('ppp01', ['test_main'], runTest = False,
                                           extraLibs = ['ftpd']))
         self.addTest(mm.generator['test']('zerocopy01', ['test_main'],

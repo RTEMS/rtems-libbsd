@@ -227,11 +227,7 @@ extern struct pcpu *cpuid_to_pcpu[];
 #define	curcpu		PCPU_GET(cpuid)
 #define	curvidata	PCPU_GET(vidata)
 
-#ifndef __rtems__
 #define UMA_PCPU_ALLOC_SIZE		PAGE_SIZE
-#else /* __rtems__ */
-#define UMA_PCPU_ALLOC_SIZE		(PAGE_SIZE / 32)
-#endif /* __rtems__ */
 
 #include <machine/pcpu_aux.h>
 
@@ -265,12 +261,12 @@ extern struct pcpu *cpuid_to_pcpu[];
 /* Accessor to elements allocated via UMA_ZONE_PCPU zone. */
 #ifndef __rtems__
 #define zpcpu_get(base) ({								\
-	__typeof(base) _ptr = (void *)((char *)(base));		\
+	__typeof(base) _ptr = (void *)((char *)(base) + zpcpu_offset());		\
 	_ptr;										\
 })
 #else /* __rtems__ */
 #define zpcpu_get(base) ({								\
-	__typeof(base) _ptr = (__typeof(base))((char *)(base));		\
+	__typeof(base) _ptr = (__typeof(base))((char *)(base) + zpcpu_offset());	\
 	_ptr;										\
 })
 #endif /* __rtems__ */

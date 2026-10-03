@@ -37,7 +37,8 @@
 #include <rtems/score/isrlevel.h>
 
 #ifdef RTEMS_SMP
-#define _BSD_EARLY_COUNTER_SIZE (CPU_MAXIMUM_PROCESSORS * UMA_PCPU_ALLOC_SIZE)
+#define _BSD_EARLY_COUNTER_SIZE \
+    (CPU_MAXIMUM_PROCESSORS * UMA_PCPU_ALLOC_SIZE / sizeof(uint64_t))
 #else
 #define _BSD_EARLY_COUNTER_SIZE 1
 #endif

@@ -190,7 +190,7 @@ static void	sleepq_switch(const void *wchan, int pri);
 #ifndef __rtems__
 static void	sleepq_timeout(void *arg);
 #else /* __rtems__ */
-static void	sleepq_timeout(Watchdog_Control *watchdog);
+static void	sleepq_timeout(Watchdog_Control *watchdog, unsigned int token);
 #endif /* __rtems__ */
 
 SDT_PROBE_DECLARE(sched, , , sleep);
@@ -417,6 +417,7 @@ sleepq_add(const void *wchan, struct lock_object *lock, const char *wmesg,
 #ifdef __rtems__
 	executing = td->td_thread;
 	_Thread_Wait_acquire_default(executing, &lock_context);
+	++td->td_sq_generation;
 	td->td_sq_state = TD_SQ_TIRED;
 	executing->Wait.return_argument_second.immutable_object = wmesg;
 #endif /* __rtems__ */
@@ -486,6 +487,8 @@ sleepq_set_timeout_sbt(const void *wchan, sbintime_t sbt, sbintime_t pr,
 	header = &cpu_self->Watchdog.Header[PER_CPU_WATCHDOG_TICKS];
 	executing->Timer.header = header;
 	executing->Timer.Watchdog.routine = sleepq_timeout;
+	executing->Timer.Watchdog.token =
+	    rtems_bsd_get_thread(executing)->td_sq_generation;
 	_Watchdog_Set_CPU(&executing->Timer.Watchdog, cpu_self);
 
 	_Watchdog_Per_CPU_acquire_critical(cpu_self, &lock_context_2);
@@ -1346,7 +1349,7 @@ sleepq_timeout(void *arg)
 }
 #else /* __rtems__ */
 static void
-sleepq_timeout(Watchdog_Control *watchdog)
+sleepq_timeout(Watchdog_Control *watchdog, unsigned int token)
 {
 	Thread_Control *thread;
 	struct thread *td;
@@ -1359,6 +1362,12 @@ sleepq_timeout(Watchdog_Control *watchdog)
 
 	_ISR_lock_ISR_disable(&lock_context);
 	_Thread_Wait_acquire_default_critical(thread, &lock_context);
+
+	/* The token names the sleep which armed the timeout. */
+	if (token != td->td_sq_generation) {
+		_Thread_Wait_release_default(thread, &lock_context);
+		return;
+	}
 
 	unblock = false;
 	switch (td->td_sq_state) {

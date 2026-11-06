@@ -103,7 +103,7 @@ _bsd_epoch_init(epoch_t epoch, uintptr_t pcpu_record_offset, int flags)
 }
 
 static void
-epoch_watchdog(Watchdog_Control *wdg)
+epoch_watchdog(Watchdog_Control *wdg, unsigned int token __unused)
 {
 	struct epoch_pcpu *epcpu;
 	ISR_Level level;

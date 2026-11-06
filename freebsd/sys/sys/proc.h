@@ -305,6 +305,7 @@ struct thread {
 #endif /* __rtems__ */
 #ifdef __rtems__
 	enum thread_sq_states td_sq_state;
+	u_int		td_sq_generation; /* Names one sleep of the thread. */
 #endif /* __rtems__ */
 	int		td_sqqueue;	/* (t) Sleepqueue queue blocked on. */
 	const void	*td_wchan;	/* (t) Sleep address. */

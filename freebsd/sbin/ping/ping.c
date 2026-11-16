@@ -319,6 +319,8 @@ ping(int argc, char *const *argv)
 
 #ifndef __rtems__
 	alarmtimeout = df = preload = tos = pcp = 0;
+#else /* __rtems__ */
+	df = preload = tos = pcp = 0;
 #endif /* __rtems__ */
 
 	outpack = outpackhdr + sizeof(struct ip);

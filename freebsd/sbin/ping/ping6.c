@@ -363,6 +363,8 @@ ping6(int argc, char *argv[])
 
 #ifndef __rtems__
 	alarmtimeout = preload = 0;
+#else /* __rtems__ */
+	preload = 0;
 #endif /* __rtems__ */
 	datap = &outpack[ICMP6ECHOLEN + ICMP6ECHOTMLEN];
 	capdns = capdns_setup();

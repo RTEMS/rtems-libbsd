@@ -5786,7 +5786,7 @@ class mdnsresponder(builder.Module):
                 'rtemsbsd/mdns/mdns.c',
                 'rtemsbsd/mdns/mdns-hostname-default.c',
             ],
-            mm.generator['source']()
+            mm.generator['source'](['-fwrapv'])
         )
 
 
